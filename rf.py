@@ -16,12 +16,24 @@ df = pd.read_csv(DATA_PATH)
 
 # Features and label
 X = df.drop("label", axis=1)
-y = df["label"]
+# Normalize labels (trim whitespace) to avoid accidental singleton classes
+y = df["label"].astype(str).str.strip()
 
-# Split 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+# Split
+label_counts = y.value_counts()
+too_small = label_counts[label_counts < 2]
+if len(too_small) > 0:
+    print(
+        "Warning: Some classes have <2 samples; disabling stratification.",
+        "Classes:", list(too_small.index)
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=None
+    )
+else:
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
 # Train RF
 model = RandomForestClassifier(
